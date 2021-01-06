@@ -8,8 +8,13 @@ import Popover from '../Popover'
 
 // import magnifyingGlass from '../../images/searchbar_icon.svg'
 
+import capitalize from '../../utils/capitalize'
+
 export default () => {
-    const [term, setTerm] = useState('')
+    // const [term, setTerm] = useState('')
+    // const [results, setResults] = useState([])
+
+    // const [currentCity, setCurrentCity] = useState(0)
 
 
 
@@ -22,47 +27,61 @@ export default () => {
             setCurrentTime(time)
         }, 1000);
     }, [])
-    // const [results, setResults] = useState([])
+
+
     // const [isResultsOpen, setResultsOpen] = useState(false)
-    // const [weather, setWeather] = useState({})
-    // const [city, setCity] = useState('')
+    const [weather, setWeather] = useState({})
+    const [currentPlace, setCurrentPlace] = useState({})
     // const [backgroundClassName, setBackgoundClassName] = useState('')
-    // const [hour, setHour] = useState(0)
+    const [hour, setHour] = useState(0)
 
-    // const getWeekday = (date, { lang, abbreviated }) => new Intl.DateTimeFormat(lang, { weekday: abbreviated ? 'short' : 'long' }).format(date)
+    const getWeekday = (date, { lang, abbreviated }) => new Intl.DateTimeFormat(lang, { weekday: abbreviated ? 'short' : 'long' }).format(date)
 
-    // const getWeather = async index => {
-    //     const language = 'en-US'
-    //     const res = await axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${results[index].lat}&lon=${results[index].lon}&exclude=minutely,hourly&units=metric&appid=${process.env.REACT_APP_API_ID}`)
-    //     console.log(res.data)
-    //     const date = new Date()
-    //     setWeather({
-    //         today: {
-    //             day: date.toLocaleDateString(language, { timeZone: res.data.timezone, weekday: 'long' }),
-    //             dateString: date.toLocaleDateString(language, { timeZone: res.data.timezone }),
-    //             temperature: Math.floor(res.data.current.temp),
-    //             humidity: res.data.current.humidity,
-    //             wind: Math.round(res.data.current.wind_speed),
-    //             min: Math.floor(res.data.daily[0].temp.min),
-    //             max: Math.ceil(res.data.daily[0].temp.max),
-    //             weather: {
-    //                 code: res.data.current.weather[0].id,
-    //                 desc: res.data.current.weather[0].description
-    //             }
-    //         },
-    //         daily: res.data.daily.filter((item, i) => i > 0 && i < 7).map(item => {
-    //             const date = new Date(item.dt * 1000)
-    //             return {
-    //                 day: getWeekday(date, { lang: language, abbreviated: true }),
-    //                 weather: item.weather[0].id,
-    //                 temperature: Math.floor(item.temp.day)
-    //             }
-    //         })
-    //     })
-    //     setCity(results[index].city)
-    //     setHour(Number(date.toLocaleString('en-US', { timeZone: res.data.timeZone, hour: 'numeric', hour12: false })))
-    //     setResultsOpen(false)
-    // }
+    const getWeather = async place => {
+        const language = 'en-US'
+        const res = await axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${place.lat}&lon=${place.lon}&exclude=minutely&units=metric&appid=${process.env.REACT_APP_API_ID}`)
+        // console.log(res.data)
+        const currentDate = new Date()
+        currentDate.setMinutes(0, 0, 0)
+        const tomorrowDate = new Date(currentDate)
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+        tomorrowDate.setHours(0, 0, 0, 0)
+        const obje = {
+            today: {
+                day: currentDate.toLocaleDateString(language, { timeZone: res.data.timezone, weekday: 'long' }),
+                dateString: currentDate.toLocaleDateString(language, { timeZone: res.data.timezone }),
+                temperature: Math.floor(res.data.current.temp),
+                humidity: res.data.current.humidity,
+                weather: {
+                    code: res.data.current.weather[0].id,
+                    desc: capitalize(res.data.current.weather[0].description)
+                },
+                hourly: res.data.hourly.filter(item => {
+                    let itemDate = new Date(item.dt * 1000)
+                    if (/*itemDate > currentDate && */itemDate < tomorrowDate) return item
+                }).map(item => {
+                    const obj = {}
+                    obj.hour = new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                    obj.weather = item.weather[0].id
+                    obj.temperature = Math.floor(item.temp)
+                    return obj
+                })
+            },
+            daily: res.data.daily.filter((item, i) => i > 0 && i < 6).map(item => {
+                const date = new Date(item.dt * 1000)
+                return {
+                    day: getWeekday(date, { lang: language }),
+                    weather: item.weather[0].id,
+                    temperature: Math.floor(item.temp.day)
+                }
+            })
+        }
+        setWeather(obje)
+        console.log(obje)
+        setCurrentPlace({ city: place.city, country: place.country })
+        setHour(Number(currentDate.toLocaleString('en-US', { timeZone: res.data.timeZone, hour: 'numeric', hour12: false })))
+        // setResultsOpen(false)
+    }
 
     // const fetch = async term => {
     //     if (term.length >= 3) {
@@ -75,10 +94,10 @@ export default () => {
     //             city: item.address.name
     //         }))
     //         setResults(arr)
-    //         setResultsOpen(true)
+    //         // setResultsOpen(true)
     //     } else {
     //         setResults([])
-    //         setResultsOpen(false)
+    //         // setResultsOpen(false)
     //     }
     // }
 
@@ -164,20 +183,20 @@ export default () => {
             <header>
                 <button onClick={() => togglePopover(!isPopoverOn)}>Places</button>
                 <div id="city-wrapper">
-                    <span>New York</span>
-                    <span>United States</span>
+                    <span>{currentPlace.city}</span>
+                    <span>{currentPlace.country}</span>
                 </div>
                 <button><TiTimes color="#fff" size={16} /></button>
-                {isPopoverOn && <Popover onChange={e => setTerm(e.target.value)} />}
+                {isPopoverOn && <Popover getWeatherHandler={getWeather} popoverHandler={togglePopover} />}
             </header>
-            <section>
+            {weather.today && <section>
                 <div id="current">
                     <p id="current-time"><FiClock style={{ marginRight: 10 }} /> {currentTime}</p>
                     <div id="current-forecast">
-                        <i className={`wi wi-owm-day-800`}></i>
+                        <i className={`wi wi-owm-day-${weather.today.weather.code}`}></i>
                         <div>
-                            <span>48 °F</span>
-                            <span>Clear sky</span>
+                            <span>{weather.today.temperature} °C</span>
+                            <span>{weather.today.weather.desc}</span>
                         </div>
                     </div>
                     <div id="forecast-selector">
@@ -190,11 +209,13 @@ export default () => {
                                 <FiChevronLeft />
                             </button>
                             <div id="reel">
-                                <div id="reel-item">
-                                    <span>9:00 PM</span>
-                                    <i className={`wi wi-owm-day-804`}></i>
-                                    <span>34 °F</span>
-                                </div>
+                                {weather.today.hourly.map((item, i) => (
+                                    <div key={`today_item_${i + 1}`} className="reel-item">
+                                        <span>{item.hour}</span>
+                                        <i className={`wi wi-owm-day-${item.weather}`}></i>
+                                        <span>{item.temperature} °C</span>
+                                    </div>
+                                ))}
                             </div>
                             <button>
                                 <FiChevronRight />
@@ -203,15 +224,17 @@ export default () => {
                     </div>
                 </div>
                 <div id="weekly">
-                    <div className="weekly-forecast">
-                        <span>Friday</span>
-                        <div>
-                            <i className={`wi wi-owm-day-804`}></i>
-                            <span>42 °F</span>
+                    {weather.daily.map((day, i) => (
+                        <div key={`weekly_day_${i + 1}`} className="weekly-forecast">
+                            <span>{day.day}</span>
+                            <div>
+                                <i className={`wi wi-owm-day-${day.weather}`}></i>
+                                <span>{day.temperature} °C</span>
+                            </div>
                         </div>
-                    </div>
+                    ))}
                 </div>
-            </section>
+            </section>}
         </main>
     )
 }

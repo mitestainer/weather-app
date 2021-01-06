@@ -362,7 +362,7 @@ main {
                     #reel {
                         flex: 1;
 
-                        #reel-item {
+                        .reel-item {
                             display: flex;
                             flex-direction: column;
                             justify-content: center;
@@ -382,6 +382,9 @@ main {
             width: 290px;
             background-color: rgba(53, 53, 53, .7);
             padding: 30px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
 
             .weekly-forecast {
 
