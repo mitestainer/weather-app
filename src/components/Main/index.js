@@ -9,6 +9,7 @@ import Popover from '../Popover'
 // import magnifyingGlass from '../../images/searchbar_icon.svg'
 
 import capitalize from '../../utils/capitalize'
+import { setRoundDate } from '../../utils/dateUtil'
 
 export default () => {
     // const [term, setTerm] = useState('')
@@ -21,66 +22,103 @@ export default () => {
     const [currentTime, setCurrentTime] = useState('')
     const [isPopoverOn, togglePopover] = useState(false)
 
+    const [weather, setWeather] = useState({})
+
+    const setClock = timezone => {
+        const date = new Date()
+        const localTime = date.getTime()
+        const localOffset = date.getTimezoneOffset() * 60000
+        const utc = localTime + localOffset
+        let fetchedCity = utc + (timezone * 1000)
+        let time = (new Date(fetchedCity)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        setCurrentTime(time)
+    }
+
+    const [intervalValue, setIntervalValue] = useState('')
+
     useEffect(() => {
-        setInterval(() => {
-            let time = (new Date()).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-            setCurrentTime(time)
-        }, 1000);
-    }, [])
+        if (intervalValue) clearInterval(intervalValue)
+        let itv = setInterval(() => setClock(weather.timezoneOffset), 1000)
+        setIntervalValue(itv)
+    }, [weather])
 
 
     // const [isResultsOpen, setResultsOpen] = useState(false)
-    const [weather, setWeather] = useState({})
     const [currentPlace, setCurrentPlace] = useState({})
+    const [reel, setReel] = useState({
+        mode: '',
+        items: []
+    })
     // const [backgroundClassName, setBackgoundClassName] = useState('')
-    const [hour, setHour] = useState(0)
 
     const getWeekday = (date, { lang, abbreviated }) => new Intl.DateTimeFormat(lang, { weekday: abbreviated ? 'short' : 'long' }).format(date)
 
     const getWeather = async place => {
         const language = 'en-US'
         const res = await axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${place.lat}&lon=${place.lon}&exclude=minutely&units=metric&appid=${process.env.REACT_APP_API_ID}`)
-        // console.log(res.data)
+        console.log(res.data)
         const currentDate = new Date()
         currentDate.setMinutes(0, 0, 0)
-        const tomorrowDate = new Date(currentDate)
-        tomorrowDate.setDate(tomorrowDate.getDate() + 1)
-        tomorrowDate.setHours(0, 0, 0, 0)
-        const obje = {
+        const tomorrowDate = setRoundDate(currentDate)
+        const nextDayDate = setRoundDate(tomorrowDate)
+        const sunrise = new Date(res.data.current.sunrise * 1000)
+        const sunset = new Date(res.data.current.sunset * 1000)
+        const weatherObject = {
+            timezoneOffset: res.data.timezone_offset,
             today: {
                 day: currentDate.toLocaleDateString(language, { timeZone: res.data.timezone, weekday: 'long' }),
                 dateString: currentDate.toLocaleDateString(language, { timeZone: res.data.timezone }),
                 temperature: Math.floor(res.data.current.temp),
-                humidity: res.data.current.humidity,
                 weather: {
-                    code: res.data.current.weather[0].id,
+                    code: `${(new Date()) >= sunrise && (new Date()) <= sunset ? 'day' : 'night'}-${res.data.current.weather[0].id}`,
                     desc: capitalize(res.data.current.weather[0].description)
                 },
                 hourly: res.data.hourly.filter(item => {
                     let itemDate = new Date(item.dt * 1000)
-                    if (/*itemDate > currentDate && */itemDate < tomorrowDate) return item
+                    if (itemDate > currentDate && itemDate < tomorrowDate) return item
                 }).map(item => {
+                    let itemHour = new Date(item.dt * 1000)
                     const obj = {}
-                    obj.hour = new Date(item.dt * 1000).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                    obj.weather = item.weather[0].id
+                    obj.hour = itemHour.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                    obj.weather = `${itemHour >= sunrise && itemHour <= sunset ? 'day' : 'night'}-${item.weather[0].id}`
                     obj.temperature = Math.floor(item.temp)
                     return obj
                 })
             },
+            tomorrow: res.data.hourly.filter(item => {
+                let itemDate = new Date(item.dt * 1000)
+                if (itemDate >= tomorrowDate && itemDate < nextDayDate) return item
+            }).map(item => {
+                let tomorrowSunrise = new Date(sunrise)
+                tomorrowSunrise.setDate(tomorrowSunrise.getDate() + 1)
+                let tomorrowSunset = new Date(sunset)
+                tomorrowSunset.setDate(tomorrowSunset.getDate() + 1)
+                let itemHour = new Date(item.dt * 1000)
+                const obj = {}
+                obj.hour = itemHour.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                obj.weather = `${itemHour >= tomorrowSunrise && itemHour <= tomorrowSunset ? 'day' : 'night'}-${item.weather[0].id}`
+                obj.temperature = Math.floor(item.temp)
+                return obj
+            }),
             daily: res.data.daily.filter((item, i) => i > 0 && i < 6).map(item => {
                 const date = new Date(item.dt * 1000)
                 return {
                     day: getWeekday(date, { lang: language }),
-                    weather: item.weather[0].id,
+                    weather: `${(new Date()) >= sunrise && (new Date()) <= sunset ? 'day' : 'night'}-${item.weather[0].id}`,
                     temperature: Math.floor(item.temp.day)
                 }
             })
         }
-        setWeather(obje)
-        console.log(obje)
+        setWeather(weatherObject)
+        setClock(weatherObject.timezoneOffset)
+        // console.log(weatherObject)
+        setReel({ ...reel, mode: 'today', items: [...weatherObject.today.hourly] })
         setCurrentPlace({ city: place.city, country: place.country })
-        setHour(Number(currentDate.toLocaleString('en-US', { timeZone: res.data.timeZone, hour: 'numeric', hour12: false })))
-        // setResultsOpen(false)
+    }
+
+    const changeReel = day => {
+        if (day === 'today') setReel({ ...reel, mode: day, items: weather.today.hourly })
+        if (day === 'tomorrow') setReel({ ...reel, mode: day, items: weather.tomorrow })
     }
 
     // const fetch = async term => {
@@ -128,57 +166,6 @@ export default () => {
     // }, [weather, hour])
 
     return (
-        // <main className={backgroundClassName}>
-        //     <div id="city_search">
-        //         <div id="search_bar">
-        //             <img src={magnifyingGlass} alt="Search icon" />
-        //             <input type="text" onChange={e => setTerm(e.target.value)} placeholder="Search any city" />
-        //         </div>
-        //         {isResultsOpen && <div id="search_results">
-        //             <ul>
-        //                 {results.map((item, i) => <li key={`result_${i}`} onClick={() => getWeather(i)}><strong>{item.city}</strong>, {item.state}, {item.country}</li>)}
-        //             </ul>
-        //         </div>}
-        //     </div>
-        //     {weather.today && <div id="result">
-        //         <div id="date_wrapper" className="card">
-        //             <div id="upper">
-        //                 <p>{city}</p>
-        //                 <div>
-        //                     <span className="max_min"><i className="wi wi-direction-down"></i>{weather.today.min}°</span>
-        //                     <span className="max_min"><i className="wi wi-direction-up"></i>{weather.today.max}°</span>
-        //                 </div>
-        //             </div>
-        //             <div id="under">
-        //                 <div id="left_info">        
-        //                     <span>{weather.today.day}</span>
-        //                     <span>{weather.today.dateString}</span>
-        //                     <span>Wind {weather.today.wind}km/h</span>
-        //                     <span><i className="wi wi-humidity"></i> {weather.today.humidity}%</span>
-        //                 </div>
-        //                 <div id="middle_icon">
-        //                     <i className={`wi wi-owm-${weather.today.weather.code}`}></i>
-        //                     <p>{weather.today.weather.desc}</p>
-        //                 </div>
-        //                 <span id="temperature">{weather.today.temperature}°</span>
-        //             </div>
-        //         </div>
-        //         <div id="daily_results" className="card">
-        //             {weather.daily.map((item, i) => {
-        //                 return (
-        //                     <div key={`day_${i}`}>
-        //                         <p>{item.day}</p>
-        //                         <i className={`wi wi-owm-${item.weather}`}></i>
-        //                         <p>{item.temperature}°</p>
-        //                     </div>
-        //                 )
-        //             })}
-        //         </div>
-        //     </div>}
-        //     <footer>
-        //         APIs by <a href="https://locationiq.com/">LocationIQ.com</a>, <a href="https://openweathermap.org/">OpenWeatherMap</a>
-        //     </footer>
-        // </main>
         <main>
             <header>
                 <button onClick={() => togglePopover(!isPopoverOn)}>Places</button>
@@ -193,7 +180,7 @@ export default () => {
                 <div id="current">
                     <p id="current-time"><FiClock style={{ marginRight: 10 }} /> {currentTime}</p>
                     <div id="current-forecast">
-                        <i className={`wi wi-owm-day-${weather.today.weather.code}`}></i>
+                        <i className={`wi wi-owm-${weather.today.weather.code}`}></i>
                         <div>
                             <span>{weather.today.temperature} °C</span>
                             <span>{weather.today.weather.desc}</span>
@@ -201,21 +188,23 @@ export default () => {
                     </div>
                     <div id="forecast-selector">
                         <div id="buttons">
-                            <button className="active">Today</button>
-                            <button>Tomorrow</button>
+                            <button className={reel.mode === 'today' ? 'active' : ''} onClick={() => changeReel('today')}>Today</button>
+                            <button className={reel.mode === 'tomorrow' ? 'active' : ''} onClick={() => changeReel('tomorrow')}>Tomorrow</button>
                         </div>
                         <div id="carousel">
                             <button>
                                 <FiChevronLeft />
                             </button>
                             <div id="reel">
-                                {weather.today.hourly.map((item, i) => (
-                                    <div key={`today_item_${i + 1}`} className="reel-item">
-                                        <span>{item.hour}</span>
-                                        <i className={`wi wi-owm-day-${item.weather}`}></i>
-                                        <span>{item.temperature} °C</span>
-                                    </div>
-                                ))}
+                                <div id="reel-wrapper">
+                                    {reel.items.map((item, i) => (
+                                        <div key={`today_item_${i + 1}`} className="reel-item">
+                                            <span>{item.hour}</span>
+                                            <i className={`wi wi-owm-${item.weather}`}></i>
+                                            <span>{item.temperature} °C</span>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                             <button>
                                 <FiChevronRight />
@@ -228,13 +217,16 @@ export default () => {
                         <div key={`weekly_day_${i + 1}`} className="weekly-forecast">
                             <span>{day.day}</span>
                             <div>
-                                <i className={`wi wi-owm-day-${day.weather}`}></i>
+                                <i className={`wi wi-owm-${day.weather}`}></i>
                                 <span>{day.temperature} °C</span>
                             </div>
                         </div>
                     ))}
                 </div>
             </section>}
+            {/* <footer>
+                APIs by <a href="https://locationiq.com/">LocationIQ.com</a>, <a href="https://openweathermap.org/">OpenWeatherMap</a>
+            </footer> */}
         </main>
     )
 }
