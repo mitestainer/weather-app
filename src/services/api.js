@@ -7,7 +7,6 @@ const getWeekday = (date, { lang, abbreviated }) => new Intl.DateTimeFormat(lang
 const getWeather = async place => {
     const language = 'en-US'
     const res = await axios.get(`https://api.openweathermap.org/data/2.5/onecall?lat=${place.lat}&lon=${place.lon}&exclude=minutely&units=metric&appid=${process.env.REACT_APP_API_ID}`)
-    console.log(res.data)
     const localTime = new LocalTime(res.data)
     const currentDate = new Date(localTime.getTime())
     currentDate.setMinutes(0, 0, 0)
@@ -29,6 +28,7 @@ const getWeather = async place => {
             hourly: res.data.hourly.filter(item => {
                 let itemDate = new Date(item.dt * 1000)
                 if (itemDate >= currentDate && itemDate < tomorrowDate) return item
+                return null
             }).map(item => {
                 let itemHour = new Date(item.dt * 1000)
                 const obj = {}
@@ -41,6 +41,7 @@ const getWeather = async place => {
         tomorrow: res.data.hourly.filter(item => {
             let itemDate = new Date(item.dt * 1000)
             if (itemDate >= tomorrowDate && itemDate < nextDayDate) return item
+            return null
         }).map(item => {
             let tomorrowSunrise = new Date(sunrise)
             tomorrowSunrise.setDate(tomorrowSunrise.getDate() + 1)
