@@ -1,0 +1,152 @@
+#popover-area {
+    position: absolute;
+    top: 57px;
+    left: 15px;
+
+    #arrow {
+        width: 0;
+        height: 0;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
+        border-bottom: 12px solid #353535;
+        position: absolute;
+        top: -12px;
+        left: 22px;
+    }
+
+    #popover {
+        position: relative;
+        padding: 12px;
+        width: 340px;
+        background-color: #353535;
+        border-radius: 8px;
+
+        #city-search {
+            position: relative;
+
+            #search-bar {
+                background-color: #2D2D2D;
+                display: flex;
+                align-items: center;
+                border: 1px solid #353535;
+                border-radius: 4px;
+                padding: 8px;
+        
+                input {
+                    background-color: transparent;
+                    color: #C2C2C1;
+                    flex: 1;
+                    margin-left: 6px;
+                    font-family: inherit;
+                }
+            }
+    
+            #search-results {
+                position: absolute;
+                right: 0;
+                left: 0;
+                z-index: 2;
+                padding: 16px 0;
+                background-color: #fff;
+                color: #000;
+                border: 1px solid;
+        
+                ul {
+                    list-style: none;
+        
+                    li {
+                        cursor: pointer;
+                        text-align: left;
+                        padding: 8px 16px;
+                        font-size: 14px;
+        
+                        &:hover {
+                            background-color: #99ccff;
+                        }
+                    }
+                }
+            }
+        }
+    
+        .popover-text {
+            color: #929290;
+            font-weight: 500;
+            font-size: 14px;
+        }
+    
+        #auto-location {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 16px 0;
+    
+            #auto-location-selector {
+                height: 26px;
+                width: 50px;
+                background-color: #282828;
+                border: 1px solid #1D1D1D;
+                border-radius: 13px;
+                cursor: pointer;
+    
+                #ball {
+                    height: 25px;
+                    width: 25px;
+                    border: 1px solid #0F0F0F;
+                    border-radius: 50%;
+                    background: linear-gradient(0deg, rgba(45,45,45,1) 0%, rgba(38,38,38,1) 100%);
+                    transition: transform .1s linear;
+    
+                    &.autolocation-off {
+                        transform: translateX(0);
+                    }
+                    
+                    &.autolocation-on {
+                        transform: translateX(100%);
+                    }
+                }
+            }
+        }
+    
+        #viewed {
+    
+            & > p {
+                text-align: left;
+            }
+
+            ul {
+                margin-top: 14px;
+                list-style: none;
+                border: 2px solid #1B1B1B;
+    
+                li {
+                    padding: 14px 16px;
+                    border-bottom: 1px solid #2a2a2a;
+                    cursor: pointer;
+                    font-size: 14px;
+
+                    &:nth-last-child(1) {
+                        border-bottom: none;
+                    }
+    
+                    & > div {
+                        display: flex;
+                        justify-content: space-between;
+                        font-weight: 300;
+    
+                        div {
+                            display: flex;
+                            align-items: center;
+                        }
+
+                        .temp-icon {
+                            width: 30px;
+                            margin-left: 10px;
+                            line-height: 1;
+                            font-size: 20px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
