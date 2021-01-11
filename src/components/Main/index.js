@@ -32,6 +32,7 @@ export default () => {
         if (intervalValue) clearInterval(intervalValue)
         let itv = setInterval(() => setClock(weather.timezoneOffset), 1000)
         setIntervalValue(itv)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [weather])
 
     const setHistory = (place, weather) => {
