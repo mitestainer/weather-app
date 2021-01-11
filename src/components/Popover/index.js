@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import './styles.scss'
 import { HiSearch } from 'react-icons/hi'
 import Location, { filterLocaltions } from '../../utils/locationUtil'
@@ -11,6 +11,8 @@ const Popover = ({ getWeatherHandler, popoverHandler }) => {
     const [isResultsOpen, setResultsOpen] = useState(false)
     const [isAutoLocationEnabled, setAutoLocation] = useState(false)
     const [recentlyViewed, setRecentlyViewed] = useState([])
+
+    const node = useRef()
 
     const fetch = async term => {
         if (term.length >= 3) {
@@ -25,10 +27,17 @@ const Popover = ({ getWeatherHandler, popoverHandler }) => {
         }
     }
 
+    const clickOutsideHandler = useCallback(e => {
+        if (node.current.contains(e.target)) return
+        popoverHandler(false)
+        document.removeEventListener('click', clickOutsideHandler)
+    }, [popoverHandler])
+
     useEffect(() => {
+        document.addEventListener('click', clickOutsideHandler)
         let array = JSON.parse(localStorage.getItem('viewedRecently') || "[]")
         setRecentlyViewed(array)
-    }, [])
+    }, [clickOutsideHandler])
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -41,6 +50,7 @@ const Popover = ({ getWeatherHandler, popoverHandler }) => {
         await getWeatherHandler(place)
         setResultsOpen(false)
         popoverHandler(false)
+        document.removeEventListener('click', clickOutsideHandler)
     }
 
     const enableAutoLocation = () => {
@@ -61,7 +71,7 @@ const Popover = ({ getWeatherHandler, popoverHandler }) => {
     }
 
     return (
-        <div id="popover-area">
+        <div id="popover-area" ref={node}>
             <div id="popover">
                 <div id="arrow"></div>
                 <div id="city-search">
