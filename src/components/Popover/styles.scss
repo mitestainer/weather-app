@@ -2,6 +2,7 @@
     position: absolute;
     top: 57px;
     left: 15px;
+    z-index: 2;
 
     &::before {
         content: '';

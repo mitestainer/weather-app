@@ -67,12 +67,17 @@ main {
 
             div {
                 display: flex;
-                font-size: 38px;
                 margin: 20px 30px;
                 color: #878787;
-
+                
+                svg {
+                    height: 38px;
+                    width: 38px;
+                }
+                
                 p {
                     margin-left: 14px;
+                    font-size: 38px;
                 }
             }
         }
@@ -221,6 +226,7 @@ main {
                     i {
                         font-size: 50px;
                         line-height: 1.5;
+                        margin-right: 10px;
                     }
                 }
             }
@@ -239,6 +245,86 @@ main {
 
         a {
             color: inherit;
+        }
+    }
+}
+
+@media screen and (max-width: 768px) {
+    main {
+        height: auto;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+
+        section {
+            flex-direction: column;
+            flex: 1 0;
+    
+            &#blank div {
+                svg {
+                    height: 24px;
+                    width: 24px;
+                }
+                p {
+                    font-size: 20px;
+                }
+            }
+    
+            #current {
+                padding: 20px;
+    
+                #current-forecast {
+    
+                    i {
+                        font-size: 100px;
+                    }
+    
+                    div {
+                        margin-left: 20px;
+    
+                        span {
+    
+                            &:nth-child(1) {
+                                font-size: 40px;
+                                margin-bottom: 4px;
+                            }
+    
+                            &:nth-child(2) {
+                                font-size: 24px;
+                            }
+                        }
+                    }
+                }
+            }
+    
+            #weekly {
+                width: 100%;
+                padding: 20px 20px 30px;
+                flex-direction: row;
+    
+                .weekly-forecast {
+                    align-items: center;
+                    
+                    span {
+                        font-size: 12px;
+                    }
+                    
+                    div {
+                        flex-direction: column;
+    
+                        span {
+                            font-size: 10px;
+                        }
+    
+                        i {
+                           font-size: 26px;
+                           margin-top: 4px;
+                           margin-right: 0;
+                       }
+                    }
+                }
+    
+            }
         }
     }
 }
