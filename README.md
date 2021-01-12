@@ -9,8 +9,6 @@ The previous version of this project featured different, simpler design and the 
 I grabbed the current style from this:
 ![](https://raw.githubusercontent.com/GNOME/gnome-weather/master/misc/screenshots/city-view.png)
 
-__Responsiveness coming next!__ 📱
-
 ## What this app do? 👓
 
 This app consumes [LocationIQ.com](https://locationiq.com/) and [OpenWeatherMap](https://openweathermap.org/) APIs to provide location and weather infos.
@@ -19,4 +17,6 @@ The location API gives locations suggestions based on the user's input and provi
 
 ## Known bugs 🐛
 
-Please let me know if you find any bugs.
+- Slider doesn't work good on mobile.
+
+Please let me know if you find any other bugs.
